@@ -1,7 +1,3 @@
 # Node Status API
 
-Small Node.js HTTP service with `GET /health` and `POST /echo`.
-
-Run: `npm test`, then `npm start`.
-
-Backdated sample commits in this repository are synthetic.
+Node.js HTTP example. Run `npm test` and `npm start`. Endpoints: `/health`, `/echo`, `/tasks`, `/tasks/:id`, `/stats`.
