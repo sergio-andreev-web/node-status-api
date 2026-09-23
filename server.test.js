@@ -40,3 +40,12 @@ test('invalid JSON, fields and query are rejected', () => withServer(async base 
   assert.equal((await request(base, '/tasks?limit=999'))[0], 422);
   assert.equal((await fetch(base + '/echo', { method: 'POST', body: '{' })).status, 400);
 }));
+
+
+test('resource API creates and filters projects', () => withServer(async base => {
+  const [status, project] = await request(base, '/api/projects', 'POST', { name: 'Release', budget: 150 });
+  assert.equal(status, 201);
+  assert.equal(project.name, 'Release');
+  assert.equal((await request(base, '/api/projects?search=Release'))[1].total, 1);
+  assert.equal((await request(base, `/api/projects/${project.id}`, 'PATCH', { active: true }))[1].active, true);
+}));

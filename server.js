@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { TaskStore } from './store.js';
+import { resources } from './src/resources/index.js';
 
 async function readBody(req) {
   let raw = '';
@@ -28,6 +29,23 @@ export function createServer(store = new TaskStore()) {
           return send(200, store.list({ ...query, limit: query.limit ? Number(query.limit) : 50, offset: query.offset ? Number(query.offset) : 0 }));
         }
         if (req.method === 'POST') return send(201, store.create(await readBody(req)));
+      }
+      const apiMatch = /^\/api\/([a-zA-Z]+)(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
+      if (apiMatch) {
+        const repository = resources[apiMatch[1]];
+        if (!repository) return send(404, { error: 'unknown resource' });
+        const id = apiMatch[2];
+        if (!id && req.method === 'GET') {
+          const query = Object.fromEntries(url.searchParams);
+          return send(200, repository.list({ search: query.search ?? '', archived: query.archived === 'true', limit: query.limit ? Number(query.limit) : 50, offset: query.offset ? Number(query.offset) : 0 }));
+        }
+        if (!id && req.method === 'POST') return send(201, repository.create(await readBody(req)));
+        if (id && req.method === 'GET') return repository.get(id) ? send(200, repository.get(id)) : send(404, { error: 'not found' });
+        if (id && req.method === 'PATCH') {
+          const record = repository.update(id, await readBody(req));
+          return record ? send(200, record) : send(404, { error: 'not found' });
+        }
+        if (id && req.method === 'DELETE') return repository.delete(id) ? send(204) : send(404, { error: 'not found' });
       }
       const match = /^\/tasks\/([a-f0-9-]+)$/.exec(url.pathname);
       if (match) {
